@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>S.League 22 — 麻雀大会</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Bebas+Neue&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* ═══════════════════════════════════════ TOKENS */
 :root {
@@ -20,20 +21,29 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--i
   background-image:radial-gradient(circle at 20% 80%,rgba(192,57,43,.04) 0%,transparent 50%),
     radial-gradient(circle at 80% 20%,rgba(26,58,107,.04) 0%,transparent 50%);}
 
+/* ═══════════════════════════════════════ LOADING */
+.loading-overlay{position:fixed;inset:0;background:rgba(13,17,23,.85);z-index:2000;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
+.loading-spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,.2);
+  border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{color:#fff;font-size:.9rem;font-weight:700;letter-spacing:1px;}
+
 /* ═══════════════════════════════════════ HEADER */
-.hdr{background:var(--ink);color:#fff;padding:0 20px;display:flex;align-items:stretch;
-  justify-content:space-between;box-shadow:0 3px 20px rgba(0,0,0,.4);position:sticky;top:0;z-index:300;min-height:56px;}
-.hdr-left{display:flex;align-items:center;gap:14px;}
-.hdr-logo{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:3px;color:#fff;line-height:1;}
+.hdr{background:var(--ink);color:#fff;padding:0 12px;display:flex;align-items:center;
+  justify-content:space-between;box-shadow:0 3px 20px rgba(0,0,0,.4);position:sticky;top:0;z-index:300;min-height:50px;gap:8px;}
+.hdr-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0;}
+.hdr-logo{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px;color:#fff;line-height:1;white-space:nowrap;}
 .hdr-logo .s{color:#e74c3c;} .hdr-logo .dot{color:var(--gold);}
-.hdr-season{font-size:.68rem;opacity:.5;letter-spacing:1px;text-transform:uppercase;margin-top:1px;}
-.hdr-right{display:flex;align-items:center;gap:8px;}
+.hdr-season{font-size:.6rem;opacity:.5;letter-spacing:1px;text-transform:uppercase;margin-top:1px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hdr-right{display:flex;align-items:center;gap:6px;flex-shrink:0;}
 .prog-pill{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:20px;
-  padding:4px 12px;font-size:.72rem;font-weight:700;color:#fff;}
+  padding:3px 8px;font-size:.68rem;font-weight:700;color:#fff;white-space:nowrap;}
 .prog-pill .done{color:#4ade80;}
 .admin-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:8px;
-  padding:5px 12px;font-size:.72rem;font-weight:700;color:#fff;cursor:pointer;transition:.2s;
-  font-family:'Noto Sans JP',sans-serif;display:flex;align-items:center;gap:5px;}
+  padding:4px 10px;font-size:.68rem;font-weight:700;color:#fff;cursor:pointer;transition:.2s;
+  font-family:'Noto Sans JP',sans-serif;display:flex;align-items:center;gap:4px;white-space:nowrap;}
 .admin-btn:hover{background:rgba(255,255,255,.18);}
 
 /* ═══════════════════════════════════════ RULE STRIP */
@@ -85,8 +95,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--i
 .fh{padding:9px 14px;color:#fff;font-weight:700;font-size:.85rem;display:flex;align-items:center;justify-content:space-between;letter-spacing:.3px;}
 .fh.t1{background:var(--t1);} .fh.t2{background:var(--t2);}
 .fh.t3{background:var(--t3);} .fh.t4{background:var(--t4);}
-.frow{display:grid;grid-template-columns:130px 1fr 110px;align-items:center;padding:9px 14px;
-  border-bottom:1px solid #f3f4f6;gap:10px;transition:background .2s;}
+.frow{display:grid;grid-template-columns:110px 1fr 100px;align-items:center;padding:9px 14px;
+  border-bottom:1px solid #f3f4f6;gap:8px;transition:background .2s;}
 .frow:last-child{border-bottom:none;}
 .frow.editing{background:#fffbeb;border-left:3px solid var(--gold);}
 .pname{font-weight:700;font-size:.88rem;}
@@ -335,10 +345,25 @@ input.si:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(2
   .sr-g{grid-template-columns:repeat(2,1fr);}
   .st:nth-child(2n){border-right:none;}
   .preview-grid{grid-template-columns:repeat(2,1fr);}
-  .frow{grid-template-columns:1fr 1fr;grid-template-rows:auto auto;}
+  /* 入力フォーム：名前を上段、順位+素点を下段に */
+  .frow{grid-template-columns:1fr 90px;grid-template-rows:auto auto;gap:6px;padding:8px 12px;}
   .frow .pname{grid-column:1/3;}
+  .frow .rankbtns{grid-column:1/2;}
+  .frow input.si{grid-column:2/3;}
+  .rb{padding:6px 2px;font-size:.72rem;}
   .team-edit-row{grid-template-columns:1fr;}
   .config-row{grid-template-columns:1fr;}
+  /* タブ */
+  .tab{font-size:.65rem;padding:10px 4px;}
+  /* ページ余白 */
+  .pg{padding:10px;}
+  .cb{padding:10px;}
+}
+@media(max-width:390px){
+  .hdr-season{display:none;}
+  .frow{grid-template-columns:1fr 80px;}
+  .rb{padding:5px 1px;font-size:.68rem;}
+  input.si{font-size:.8rem;}
 }
 </style>
 </head>
@@ -419,13 +444,21 @@ input.si:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(2
 </div><!-- /main-app -->
 
 <!-- ══════════════════════════════════════════════════════
+     LOADING OVERLAY
+══════════════════════════════════════════════════════ -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">データを読み込み中...</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
      ADMIN LOGIN OVERLAY
 ══════════════════════════════════════════════════════ -->
 <div class="admin-overlay" id="admin-overlay" style="display:none;">
   <div class="admin-login-box">
     <div class="logo"><span>S</span>.League<span style="color:#c9862a"> 22</span></div>
     <div class="sub">ADMIN PANEL</div>
-    <input type="text" id="adm-user" placeholder="Username" autocomplete="off">
+    <input type="email" id="adm-user" placeholder="Email" autocomplete="off">
     <input type="password" id="adm-pass" placeholder="Password" onkeydown="if(event.key==='Enter')doAdminLogin()">
     <button onclick="doAdminLogin()">ログイン</button>
     <div class="err" id="adm-err"></div>
@@ -489,11 +522,16 @@ input.si:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(2
     <!-- ── アカウント管理 ── -->
     <div id="adm-creds" class="admin-pg">
       <div class="acard"><div class="ach">🔐 Adminアカウント管理</div><div class="acb">
-        <div class="hint">Adminページにアクセスできるアカウントを管理します。Username・Passwordを自由に設定できます。</div>
-        <div class="cred-list" id="cred-list"></div>
-        <div style="margin-top:10px;display:flex;gap:8px;">
-          <button class="btn btn-green" onclick="addCred()">＋ アカウントを追加</button>
-          <button class="btn btn-blue" onclick="saveCreds()">✓ 保存</button>
+        <div class="hint">アカウントはSupabase Authで管理されています。追加・削除はSupabaseダッシュボード（Authentication → Users）から行ってください。</div>
+        <div style="background:#eff6ff;border-radius:8px;padding:12px;font-size:.8rem;color:var(--blue);line-height:1.7;margin-top:8px;">
+          <strong>🔗 Supabaseダッシュボード</strong><br>
+          <a href="https://supabase.com/dashboard/project/krtgxuepwjrffnmdtfto/auth/users" target="_blank" style="color:var(--blue);">
+            ユーザー管理ページを開く →
+          </a><br><br>
+          <strong>現在ログイン中：</strong> <span id="current-user-email">-</span>
+        </div>
+        <div style="margin-top:12px;">
+          <button class="btn btn-red" onclick="doSignOut()">🚪 ログアウト</button>
         </div>
       </div></div>
       <div class="acard"><div class="ach">💡 将来：参加者ログイン機能について</div><div class="acb">
@@ -687,24 +725,63 @@ const TN = ['卓1','卓2','卓3'];
 const RANK_BONUS = {1:50,2:10,3:-10,4:-30};
 const CHOMBO_PEN = -20;
 
-// Default admin credentials
-const DEFAULT_CREDS = [{user:'admin',pass:'sleague22'}];
+// ════════════════════════════════════════════════════════
+// SUPABASE
+// ════════════════════════════════════════════════════════
+const SUPA_URL = 'https://krtgxuepwjrffnmdtfto.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtydGd4dWVwd2pyZmZubWR0ZnRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2NzM4NzEsImV4cCI6MjA4ODI0OTg3MX0.0mhoJCL_B5eAPtBG4WJz3t5_2rx0Nnp2l7fppvnMFDQ';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 // ════════════════════════════════════════════════════════
 // STATE
 // ════════════════════════════════════════════════════════
-let scores    = JSON.parse(localStorage.getItem('sl22_sc') || '{}');
-let penalties = JSON.parse(localStorage.getItem('sl22_pn') || '[]');
-let pnames    = JSON.parse(localStorage.getItem('sl22_pnames') || '{}');
-let teamnames = JSON.parse(localStorage.getItem('sl22_tnames') || '{}');
-let creds     = JSON.parse(localStorage.getItem('sl22_creds') || JSON.stringify(DEFAULT_CREDS));
-let config    = JSON.parse(localStorage.getItem('sl22_cfg') || '{}');
+let scores    = {};
+let penalties = [];
+let pnames    = {};
+let teamnames = {};
+let config    = {};
 let curRound=0, curTable=0, editPlayer=null;
+let supaSession = null; // Supabase auth session
 
-function persist(){
-  localStorage.setItem('sl22_sc',JSON.stringify(scores));
-  localStorage.setItem('sl22_pn',JSON.stringify(penalties));
+// DB キー定数
+const DB_KEY_SCORES   = 'scores';
+const DB_KEY_PENALTIES= 'penalties';
+const DB_KEY_PNAMES   = 'pnames';
+const DB_KEY_TNAMES   = 'teamnames';
+const DB_KEY_CONFIG   = 'config';
+
+// ── Supabase読み書きヘルパー ──
+async function dbGet(key, fallback) {
+  const { data, error } = await supa.from('sl22_kv').select('value').eq('key', key).single();
+  if (error || !data) return fallback;
+  try { return JSON.parse(data.value); } catch { return fallback; }
 }
+async function dbSet(key, value) {
+  const { error } = await supa.from('sl22_kv').upsert({ key, value: JSON.stringify(value) }, { onConflict: 'key' });
+  if (error) console.error('dbSet error:', key, error.message);
+}
+
+// ── persist: scores と penalties を保存 ──
+async function persist() {
+  await Promise.all([
+    dbSet(DB_KEY_SCORES, scores),
+    dbSet(DB_KEY_PENALTIES, penalties),
+  ]);
+}
+
+// ── 全データをSupabaseから読み込む ──
+async function loadAll() {
+  showLoadingOverlay(true);
+  [scores, penalties, pnames, teamnames, config] = await Promise.all([
+    dbGet(DB_KEY_SCORES,    {}),
+    dbGet(DB_KEY_PENALTIES, []),
+    dbGet(DB_KEY_PNAMES,    {}),
+    dbGet(DB_KEY_TNAMES,    {}),
+    dbGet(DB_KEY_CONFIG,    {}),
+  ]);
+  showLoadingOverlay(false);
+}
+
 function gs(r,p){return scores[String(r)]?.[p]||{rank:'',raw:''};}
 function ss(r,p,d){if(!scores[String(r)])scores[String(r)]={};scores[String(r)][p]=d;}
 
@@ -903,8 +980,10 @@ function saveTable(){
     return;
   }
   tbl.forEach((p,i)=>{const s=gs(curRound,p);ss(curRound,p,{...s,raw:raws[i]});});
-  persist();editPlayer=null;renderRoundChips();renderTsel();renderForm();
-  toast('✅ '+TN[curTable]+'（第'+(curRound+1)+'戦）保存しました');
+  persist().then(()=>{
+    editPlayer=null;renderRoundChips();renderTsel();renderForm();
+    toast('✅ '+TN[curTable]+'（第'+(curRound+1)+'戦）保存しました');
+  });
 }
 
 // ════════════════════════════════════════════════════════
@@ -918,7 +997,7 @@ function openCho(){
 function doChombo(){
   const p=document.getElementById('m-cho-p').value;
   penalties.push({id:Date.now()+'c',round:curRound,tableIdx:curTable,player:p,type:'cho'});
-  persist();closeM('m-cho');renderForm();toast(`⚠️ チョンボ記録：${pn(p)} -20P`);
+  persist().then(()=>{closeM('m-cho');renderForm();toast(`⚠️ チョンボ記録：${pn(p)} -20P`);});
 }
 function openYak(){
   const opts=SCHEDULE[curRound][curTable].map(p=>`<option value="${p}">${pn(p)}</option>`).join('');
@@ -932,7 +1011,7 @@ function doYakuman(){
   const honba=document.getElementById('m-yak-h').value;
   if(!yakuType){toast('役満の種類を選択してください');return;}
   penalties.push({id:Date.now()+'y',round:curRound,tableIdx:curTable,player:p,type:'yak',yakuType,kyoku,honba});
-  persist();closeM('m-yak');renderForm();toast(`🌟 役満記録：${pn(p)}「${yakuType}」${kyoku} ${honba}`);
+  persist().then(()=>{closeM('m-yak');renderForm();toast(`🌟 役満記録：${pn(p)}「${yakuType}」${kyoku} ${honba}`);});
 }
 function openEdt(){
   const opts=SCHEDULE[curRound][curTable].map(p=>`<option value="${p}">${pn(p)}</option>`).join('');
@@ -940,7 +1019,7 @@ function openEdt(){
   document.getElementById('m-edt').style.display='flex';
 }
 function doEdit(){editPlayer=document.getElementById('m-edt-p').value;closeM('m-edt');renderForm();document.getElementById(`si-${editPlayer}`)?.focus();toast(`✏️ ${pn(editPlayer)} を修正モードへ`);}
-function delPen(id){penalties=penalties.filter(x=>x.id!==id);persist();renderForm();toast('記録を削除しました');}
+function delPen(id){penalties=penalties.filter(x=>x.id!==id);persist().then(()=>{renderForm();toast('記録を削除しました');});}
 
 // ════════════════════════════════════════════════════════
 // RANKINGS
@@ -1104,18 +1183,20 @@ function openAdminLogin(){
   setTimeout(()=>document.getElementById('adm-user').focus(),100);
 }
 function closeAdminLogin(){document.getElementById('admin-overlay').style.display='none';}
-function doAdminLogin(){
-  const u=document.getElementById('adm-user').value.trim();
-  const p=document.getElementById('adm-pass').value;
-  const ok=creds.some(c=>c.user===u&&c.pass===p);
-  if(ok){
-    document.getElementById('admin-overlay').style.display='none';
-    document.getElementById('main-app').style.display='none';
-    document.getElementById('admin-panel').style.display='block';
-    renderAdminPlayers();renderAdminTeams();renderAdminCreds();renderResetGrid();loadConfig();
-  } else {
-    document.getElementById('adm-err').textContent='ユーザー名またはパスワードが違います';
+async function doAdminLogin(){
+  const email=document.getElementById('adm-user').value.trim();
+  const pass=document.getElementById('adm-pass').value;
+  document.getElementById('adm-err').textContent='ログイン中...';
+  const {data,error}=await supa.auth.signInWithPassword({email,password:pass});
+  if(error){
+    document.getElementById('adm-err').textContent='メールアドレスまたはパスワードが違います';
+    return;
   }
+  supaSession=data.session;
+  document.getElementById('admin-overlay').style.display='none';
+  document.getElementById('main-app').style.display='none';
+  document.getElementById('admin-panel').style.display='block';
+  renderAdminPlayers();renderAdminTeams();renderAdminCreds();renderResetGrid();loadConfig();
 }
 function closeAdmin(){
   document.getElementById('admin-panel').style.display='none';
@@ -1148,8 +1229,7 @@ function savePlayers(){
     const v=document.getElementById(`pname-${p}`)?.value.trim();
     if(v) pnames[p]=v; else delete pnames[p];
   });
-  localStorage.setItem('sl22_pnames',JSON.stringify(pnames));
-  toast('✓ 氏名を保存しました');
+  dbSet(DB_KEY_PNAMES, pnames).then(()=>toast('✓ 氏名を保存しました'));
 }
 
 // ════════════════════════════════════════════════════════
@@ -1177,30 +1257,28 @@ function saveTeams(){
     const v=document.getElementById(`tname-${k}`)?.value.trim();
     if(v) teamnames[k]=v; else delete teamnames[k];
   });
-  localStorage.setItem('sl22_tnames',JSON.stringify(teamnames));
-  toast('✓ チーム名を保存しました');
+  dbSet(DB_KEY_TNAMES, teamnames).then(()=>toast('✓ チーム名を保存しました'));
 }
 
 // ════════════════════════════════════════════════════════
 // ADMIN: CREDENTIALS
 // ════════════════════════════════════════════════════════
 function renderAdminCreds(){
-  const list=document.getElementById('cred-list');
-  list.innerHTML=creds.map((c,i)=>`
-    <div class="cred-row">
-      <input type="text" id="cu-${i}" value="${c.user}" placeholder="Username">
-      <input type="password" id="cp-${i}" value="${c.pass}" placeholder="Password">
-      <button class="del-cred" onclick="delCred(${i})">削除</button>
-    </div>`).join('');
+  // Supabase Auth管理のため、現在のログインユーザーを表示
+  supa.auth.getUser().then(({data})=>{
+    const el=document.getElementById('current-user-email');
+    if(el&&data?.user) el.textContent=data.user.email;
+  });
 }
-function addCred(){creds.push({user:'',pass:''});renderAdminCreds();}
-function delCred(i){if(creds.length<=1){toast('⚠️ 最低1つのアカウントが必要です');return;}creds.splice(i,1);renderAdminCreds();}
-function saveCreds(){
-  const newC=creds.map((_,i)=>({user:document.getElementById(`cu-${i}`)?.value.trim()||'',pass:document.getElementById(`cp-${i}`)?.value||''})).filter(c=>c.user&&c.pass);
-  if(!newC.length){toast('⚠️ 有効なアカウントを1つ以上入力してください');return;}
-  creds=newC;
-  localStorage.setItem('sl22_creds',JSON.stringify(creds));
-  toast('✓ アカウントを保存しました');
+function addCred(){toast('アカウント追加はSupabaseダッシュボードから行ってください');}
+function delCred(){toast('アカウント削除はSupabaseダッシュボードから行ってください');}
+function saveCreds(){toast('アカウント管理はSupabaseダッシュボードから行ってください');}
+function doSignOut(){
+  supa.auth.signOut().then(()=>{
+    supaSession=null;
+    closeAdmin();
+    toast('ログアウトしました');
+  });
 }
 
 // ════════════════════════════════════════════════════════
@@ -1219,9 +1297,10 @@ function saveConfig(){
     date:document.getElementById('cfg-date').value,
     venue:document.getElementById('cfg-venue').value,
   };
-  localStorage.setItem('sl22_cfg',JSON.stringify(config));
-  if(config.sub) document.getElementById('hdr-subtitle').textContent=config.sub;
-  toast('✓ 設定を保存しました');
+  dbSet(DB_KEY_CONFIG, config).then(()=>{
+    if(config.sub) document.getElementById('hdr-subtitle').textContent=config.sub;
+    toast('✓ 設定を保存しました');
+  });
 }
 
 // ════════════════════════════════════════════════════════
@@ -1246,11 +1325,13 @@ function doImport(){
     if(d.pnames) pnames=d.pnames;
     if(d.teamnames) teamnames=d.teamnames;
     if(d.config) config=d.config;
-    persist();
-    localStorage.setItem('sl22_pnames',JSON.stringify(pnames));
-    localStorage.setItem('sl22_tnames',JSON.stringify(teamnames));
-    localStorage.setItem('sl22_cfg',JSON.stringify(config));
-    toast('✅ インポート完了');
+    Promise.all([
+      dbSet(DB_KEY_SCORES, scores),
+      dbSet(DB_KEY_PENALTIES, penalties),
+      dbSet(DB_KEY_PNAMES, pnames),
+      dbSet(DB_KEY_TNAMES, teamnames),
+      dbSet(DB_KEY_CONFIG, config),
+    ]).then(()=>toast('✅ インポート完了（Supabaseに保存）'));
   }catch(e){toast('❌ インポート失敗：JSONが不正です');}
 }
 function renderResetGrid(){
@@ -1260,29 +1341,51 @@ function renderResetGrid(){
 function resetRound(r){
   showConfirm(`第${r+1}戦のスコアをリセットしますか？`, ()=>{
     delete scores[String(r)];
-    // round は数値・文字列どちらで保存されていても除去
     penalties=penalties.filter(x=>String(x.round)!==String(r));
-    persist();
-    renderResetGrid();
-    toast(`🗑️ 第${r+1}戦をリセットしました`);
+    persist().then(()=>{ renderResetGrid(); toast(`🗑️ 第${r+1}戦をリセットしました`); });
   });
 }
 function resetAll(){
   showConfirm('⚠️ 全データをリセットします。この操作は取り消せません。本当に実行しますか？', ()=>{
     scores={};penalties=[];
-    persist();
-    renderResetGrid();
-    toast('🗑️ 全データをリセットしました');
+    persist().then(()=>{ renderResetGrid(); toast('🗑️ 全データをリセットしました'); });
   });
+}
+
+// ════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════
+function showLoadingOverlay(show){
+  const el=document.getElementById('loading-overlay');
+  if(el) el.style.display=show?'flex':'none';
 }
 
 // ════════════════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════════════════
-if(config.sub) document.getElementById('hdr-subtitle').textContent=config.sub;
-renderRoundChips();
-renderTsel();
-renderForm();
+(async ()=>{
+  await loadAll();
+  if(config.sub) document.getElementById('hdr-subtitle').textContent=config.sub;
+  renderRoundChips();
+  renderTsel();
+  renderForm();
+
+  // Supabaseリアルタイム同期（他デバイスの変更を自動反映）
+  supa.channel('sl22_kv_changes')
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'sl22_kv'},async (payload)=>{
+      const key=payload.new.key;
+      try{
+        const val=JSON.parse(payload.new.value);
+        if(key===DB_KEY_SCORES){scores=val;}
+        else if(key===DB_KEY_PENALTIES){penalties=val;}
+        else if(key===DB_KEY_PNAMES){pnames=val;}
+        else if(key===DB_KEY_TNAMES){teamnames=val;}
+        else if(key===DB_KEY_CONFIG){config=val;if(config.sub)document.getElementById('hdr-subtitle').textContent=config.sub;}
+        renderRoundChips();renderTsel();renderForm();
+      }catch(e){console.error('realtime parse error',e);}
+    })
+    .subscribe();
+})();
 </script>
 </body>
 </html>
