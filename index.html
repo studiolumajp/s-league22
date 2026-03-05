@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S.League 成績アーカイブ</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#090d14;--surf:#0f1520;--card:#141c28;--bdr:#1d2538;
+  --gold:#c9a84c;--gold2:#e8c970;--silver:#8fa3b8;--bronze:#b5714a;
+  --txt:#dce4f2;--muted:#5c6a82;--green:#4cba7d;--red:#e05c5c;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:'Noto Sans JP',sans-serif;font-weight:300;min-height:100vh;overflow-x:hidden}
+
+/* ── HEADER ── */
+header{
+  padding:48px 44px 36px;
+  background:linear-gradient(155deg,#0d1422 0%,#090d16 100%);
+  border-bottom:1px solid var(--bdr);position:relative;overflow:hidden
+}
+header::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 55% 90% at 12% 0%,rgba(201,168,76,.09) 0%,transparent 65%),
+             radial-gradient(ellipse 35% 55% at 88% 100%,rgba(61,100,220,.05) 0%,transparent 60%)
+}
+header::after{
+  content:'SL';font-family:'Bebas Neue',sans-serif;font-size:280px;
+  color:rgba(201,168,76,.025);position:absolute;right:-8px;top:-40px;
+  line-height:1;pointer-events:none;letter-spacing:-.02em
+}
+.hi{position:relative;max-width:1080px;margin:0 auto}
+.htag{font-family:'Bebas Neue',sans-serif;letter-spacing:.35em;font-size:10px;color:var(--gold);margin-bottom:8px}
+h1{
+  font-family:'Bebas Neue',sans-serif;font-size:clamp(50px,8vw,94px);letter-spacing:.04em;line-height:1;
+  background:linear-gradient(130deg,var(--gold2) 0%,var(--gold) 50%,#9a7228 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text
+}
+.hsub{font-size:11px;color:var(--muted);margin-top:10px;letter-spacing:.12em}
+.hstats{display:flex;gap:48px;margin-top:28px;flex-wrap:wrap}
+.hstat-v{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--gold);letter-spacing:.06em}
+.hstat-l{font-size:9px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-top:1px}
+
+/* ── TABS ── */
+.tabbar{position:sticky;top:0;z-index:200;background:var(--surf);border-bottom:1px solid var(--bdr)}
+.tabbar-inner{max-width:1080px;margin:0 auto;padding:0 44px;display:flex}
+.tab{
+  padding:15px 22px;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--muted);cursor:pointer;background:none;border:none;
+  border-bottom:2px solid transparent;transition:color .2s,border-color .2s
+}
+.tab:hover{color:var(--txt)}.tab.on{color:var(--gold);border-bottom-color:var(--gold)}
+
+/* ── MAIN ── */
+main{max-width:1080px;margin:0 auto;padding:40px 44px}
+.panel{display:none}.panel.on{display:block}
+.stitle{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:.1em;margin-bottom:4px}
+.ssub{font-size:10px;color:var(--muted);letter-spacing:.12em;margin-bottom:32px}
+
+/* ── PODIUM ── */
+.podium{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:40px;max-width:600px}
+.pcard{
+  background:var(--card);border:1px solid var(--bdr);border-radius:10px;
+  padding:22px 16px 18px;text-align:center;position:relative;overflow:hidden;transition:transform .2s
+}
+.pcard:hover{transform:translateY(-3px)}
+.pcard::after{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.p1::after{background:linear-gradient(90deg,var(--gold),var(--gold2))}
+.p2::after{background:linear-gradient(90deg,var(--silver),#aac0d8)}
+.p3::after{background:linear-gradient(90deg,var(--bronze),#d49070)}
+.pmed{font-size:24px;margin-bottom:8px}
+.pnm{font-weight:700;font-size:13px;margin-bottom:6px;line-height:1.3}
+.psc{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.04em}
+.p1 .psc{color:var(--gold)}.p2 .psc{color:var(--silver)}.p3 .psc{color:var(--bronze)}
+.pmt{font-size:9px;color:var(--muted);margin-top:4px;letter-spacing:.06em}
+
+/* ── RANK TABLE ── */
+.rtbl{width:100%;border-collapse:collapse}
+.rtbl thead tr{border-bottom:1px solid var(--bdr)}
+.rtbl thead th{
+  font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);padding:0 14px 12px;text-align:left
+}
+.rtbl thead th.r{text-align:right}
+.rtbl tbody tr{border-bottom:1px solid rgba(29,37,56,.7);transition:background .15s}
+.rtbl tbody tr:hover{background:rgba(255,255,255,.025)}
+.rtbl tbody td{padding:11px 14px;font-size:13px}
+.rtbl tbody td.r{text-align:right}
+.rn{font-family:'Bebas Neue',sans-serif;font-size:18px;width:36px;display:inline-block;text-align:center}
+.c1{color:var(--gold)}.c2{color:var(--silver)}.c3{color:var(--bronze)}.cx{color:var(--muted);font-size:14px}
+.pnm2{
+  font-weight:700;font-size:14px;
+  cursor:pointer;border-bottom:1px dashed rgba(201,168,76,.4);
+  transition:color .15s,border-color .15s;display:inline-block;
+}
+.pnm2:hover{color:var(--gold);border-bottom-color:var(--gold)}
+.sv{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:.04em}
+.sp{color:var(--green)}.sn{color:var(--red)}.sz{color:var(--muted)}
+.wn{
+  display:inline-block;background:rgba(201,168,76,.12);color:var(--gold);
+  border:1px solid rgba(201,168,76,.28);border-radius:3px;
+  padding:1px 7px;font-size:9px;font-weight:700;letter-spacing:.08em;margin-left:6px;vertical-align:middle
+}
+.ec{color:var(--muted);font-size:11px}
+
+/* ── ARCHIVE ── */
+.ecard{background:var(--card);border:1px solid var(--bdr);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.ehead{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 22px;background:rgba(255,255,255,.015);
+  border-bottom:1px solid transparent;cursor:pointer;transition:background .15s;user-select:none
+}
+.ehead:hover{background:rgba(255,255,255,.03)}
+.ecard.open .ehead{border-bottom-color:var(--bdr)}
+.enum{font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:.22em;color:var(--gold)}
+.etl{font-weight:700;font-size:14px;margin-top:3px}
+.ewrap{display:flex;align-items:center;gap:8px}
+.ewcr{font-size:14px}.ewnm{font-weight:700;font-size:12px}
+.ewsc{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold);letter-spacing:.04em}
+.chv{font-size:10px;color:var(--muted);transition:transform .2s;margin-left:10px}
+.ecard.open .chv{transform:rotate(180deg)}
+.ebody{display:none}.ecard.open .ebody{display:block}
+.etbl{width:100%;border-collapse:collapse}
+.etbl tr{border-bottom:1px solid rgba(29,37,56,.5)}
+.etbl tr:last-child{border-bottom:none}
+.etbl tr:hover{background:rgba(255,255,255,.015)}
+.etbl td{padding:9px 22px;font-size:12px}
+.etbl td:last-child{text-align:right}
+.ern{font-family:'Bebas Neue',sans-serif;font-size:15px;width:34px;display:inline-block;text-align:center}
+
+/* ── MODAL ── */
+.modal-bg{
+  display:none;position:fixed;inset:0;z-index:1000;
+  background:rgba(5,8,16,.85);backdrop-filter:blur(6px);
+  align-items:center;justify-content:center;padding:20px;
+}
+.modal-bg.show{display:flex}
+.modal{
+  background:var(--card);border:1px solid var(--bdr);border-radius:14px;
+  width:100%;max-width:560px;max-height:88vh;overflow:hidden;
+  display:flex;flex-direction:column;
+  box-shadow:0 24px 80px rgba(0,0,0,.6);
+  animation:mslide .22s ease
+}
+@keyframes mslide{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.modal-head{
+  padding:24px 26px 18px;
+  border-bottom:1px solid var(--bdr);
+  background:linear-gradient(135deg,rgba(201,168,76,.07) 0%,transparent 60%);
+  position:relative;flex-shrink:0
+}
+.modal-close{
+  position:absolute;top:16px;right:18px;
+  background:none;border:none;cursor:pointer;
+  color:var(--muted);font-size:20px;line-height:1;
+  transition:color .15s;padding:4px 8px;border-radius:4px
+}
+.modal-close:hover{color:var(--txt);background:rgba(255,255,255,.06)}
+.modal-player{
+  font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:.06em;
+  color:var(--txt);margin-bottom:10px
+}
+.modal-stats{display:flex;gap:24px;flex-wrap:wrap}
+.mstat-v{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.04em}
+.mstat-l{font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:1px}
+.modal-body{overflow-y:auto;flex:1}
+.modal-section-head{
+  padding:12px 26px 8px;
+  font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);border-bottom:1px solid var(--bdr);
+  display:grid;grid-template-columns:80px 1fr 60px 60px;gap:8px
+}
+.mtbl-row{
+  display:grid;grid-template-columns:80px 1fr 60px 60px;gap:8px;
+  padding:11px 26px;border-bottom:1px solid rgba(29,37,56,.5);
+  align-items:center;transition:background .12s
+}
+.mtbl-row:last-child{border-bottom:none}
+.mtbl-row:hover{background:rgba(255,255,255,.02)}
+.mtbl-row.win .mlbl{color:var(--gold)}
+.mlbl{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:.14em;color:var(--gold)}
+.mdate{font-size:10px;color:var(--muted)}
+.mrank{
+  font-family:'Bebas Neue',sans-serif;font-size:16px;text-align:center
+}
+.mscore{
+  font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.04em;text-align:right
+}
+.modal-foot{
+  padding:14px 26px;border-top:1px solid var(--bdr);
+  font-size:10px;color:var(--muted);text-align:center;flex-shrink:0
+}
+
+@media(max-width:640px){
+  header{padding:28px 18px 22px}
+  main{padding:22px 18px}
+  .tabbar-inner{padding:0 18px}
+  .tab{padding:12px 12px;font-size:9px}
+  .podium{max-width:100%}
+  header::after{display:none}
+  .ewrap{display:none}
+  .modal{max-width:100%;max-height:92vh}
+  .modal-section-head,.mtbl-row{grid-template-columns:70px 1fr 50px 56px;padding:10px 18px}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="hi">
+  <div class="htag">Official Records · 麻雀大会</div>
+  <h1>S.LEAGUE</h1>
+  <div class="hsub">成績アーカイブ</div>
+  <div class="hstats">
+    <div><div class="hstat-v">21</div><div class="hstat-l">大会数</div></div>
+    <div><div class="hstat-v">323</div><div class="hstat-l">延べ参加人数</div></div>
+    <div><div class="hstat-v">113</div><div class="hstat-l">参加選手数</div></div>
+  </div>
+</div>
+</header>
+
+<nav class="tabbar">
+  <div class="tabbar-inner">
+    <button class="tab on" data-tab="ranking">累計ランキング</button>
+    <button class="tab" data-tab="archive">大会アーカイブ</button>
+  </div>
+</nav>
+
+<main>
+  <div id="p-ranking" class="panel on">
+    <div class="stitle">累計ランキング</div>
+    <div class="ssub">全21大会の総合得点合計による順位 — 選手名をクリックで詳細表示</div>
+    <div class="podium" id="podium"></div>
+    <table class="rtbl">
+      <thead><tr>
+        <th>順位</th><th>選手名</th>
+        <th class="r">参加</th><th class="r">優勝</th><th class="r">累計得点</th>
+      </tr></thead>
+      <tbody id="rbody"></tbody>
+    </table>
+  </div>
+
+  <div id="p-archive" class="panel">
+    <div class="stitle">大会アーカイブ</div>
+    <div class="ssub">各大会の結果一覧 — 行クリックで展開</div>
+    <div id="alist"></div>
+  </div>
+</main>
+
+<!-- MODAL -->
+<div class="modal-bg" id="modal-bg" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-head">
+      <button class="modal-close" onclick="closeModalDirect()">✕</button>
+      <div class="modal-player" id="m-name"></div>
+      <div class="modal-stats" id="m-stats"></div>
+    </div>
+    <div class="modal-section-head">
+      <span>大会</span><span>日付</span><span style="text-align:center">順位</span><span style="text-align:right">得点</span>
+    </div>
+    <div class="modal-body" id="m-body"></div>
+    <div class="modal-foot" id="m-foot"></div>
+  </div>
+</div>
+
+<script>
+const EVENTS = {"1": [{"name": "ちば", "total": 213.1, "rank": 1}, {"name": "らむ", "total": 175.4, "rank": 2}, {"name": "りすがめ", "total": 166.1, "rank": 3}, {"name": "はやと", "total": 133.5, "rank": 4}, {"name": "チェリ", "total": 92.6, "rank": 5}, {"name": "おにぎり", "total": 55.9, "rank": 6}, {"name": "shooooo", "total": 48.0, "rank": 7}, {"name": "ムーア", "total": 38.2, "rank": 8}, {"name": "ゆうせい", "total": 5.4, "rank": 9}, {"name": "Ryo.F", "total": -83.9, "rank": 10}, {"name": "U-MA", "total": -91.7, "rank": 11}, {"name": "サトシ", "total": -112.7, "rank": 12}, {"name": "えり", "total": -112.8, "rank": 13}, {"name": "うめちゃん", "total": -139.2, "rank": 14}, {"name": "はやみ", "total": -153.6, "rank": 15}, {"name": "かわしま", "total": -234.3, "rank": 16}], "2": [{"name": "madlife", "total": 296.5, "rank": 1}, {"name": "ムーア", "total": 66.1, "rank": 2}, {"name": "shooooo", "total": 28.3, "rank": 3}, {"name": "冷えたご飯", "total": 3.6, "rank": 4}, {"name": "かわしま", "total": -18.0, "rank": 5}, {"name": "えび", "total": -74.4, "rank": 6}, {"name": "はやと", "total": -135.7, "rank": 7}, {"name": "九歩", "total": -166.4, "rank": 8}], "3": [{"name": "U-MA", "total": 210.8, "rank": 1}, {"name": "らむ", "total": 102.3, "rank": 2}, {"name": "Ryo.F", "total": 95.8, "rank": 3}, {"name": "MRB", "total": 56.5, "rank": 4}, {"name": "うぶめ", "total": 23.9, "rank": 5}, {"name": "ぱるぴー", "total": 1.3, "rank": 6}, {"name": "shooooo", "total": -18.5, "rank": 7}, {"name": "りすがめ", "total": -23.9, "rank": 8}, {"name": "にじま", "total": -82.8, "rank": 9}, {"name": "ムーア", "total": -96.6, "rank": 10}, {"name": "はやと", "total": -110.8, "rank": 11}, {"name": "九歩", "total": -158.0, "rank": 12}], "4": [{"name": "敢太", "total": 179.3, "rank": 1}, {"name": "ほしの", "total": 165.2, "rank": 2}, {"name": "りすがめ", "total": 143.2, "rank": 3}, {"name": "ぴの", "total": 136.8, "rank": 4}, {"name": "つばきりょう", "total": 121.2, "rank": 5}, {"name": "ぱるぴー", "total": 106.2, "rank": 6}, {"name": "ゆうせい", "total": 78.9, "rank": 7}, {"name": "コジマる", "total": -9.7, "rank": 8}, {"name": "なの", "total": -11.4, "rank": 9}, {"name": "石倉", "total": -75.6, "rank": 10}, {"name": "九歩", "total": -82.0, "rank": 11}, {"name": "ちゃぴ", "total": -108.5, "rank": 12}, {"name": "ゲンツ", "total": -115.5, "rank": 13}, {"name": "おおけん", "total": -158.3, "rank": 14}, {"name": "kazutaka", "total": -172.4, "rank": 15}, {"name": "こま", "total": -197.4, "rank": 16}], "5": [{"name": "ちゃぴ", "total": 194.0, "rank": 1}, {"name": "U-MA", "total": 105.4, "rank": 2}, {"name": "にじま", "total": 105.0, "rank": 3}, {"name": "ほしの", "total": 72.7, "rank": 4}, {"name": "だてまき", "total": 30.2, "rank": 5}, {"name": "旅の荒鷲", "total": 28.3, "rank": 6}, {"name": "ぱるぴー", "total": 27.3, "rank": 7}, {"name": "うぶめ", "total": 26.7, "rank": 8}, {"name": "ゆうせい", "total": 15.3, "rank": 9}, {"name": "らむ", "total": -20.7, "rank": 10}, {"name": "ちば", "total": -54.7, "rank": 11}, {"name": "九歩", "total": -64.9, "rank": 12}, {"name": "こま", "total": -86.3, "rank": 13}, {"name": "なの", "total": -110.8, "rank": 14}, {"name": "かんた", "total": -121.0, "rank": 15}, {"name": "ちょろ", "total": -146.5, "rank": 16}], "6": [{"name": "らむ", "total": 260.4, "rank": 1}, {"name": "MFC", "total": 206.8, "rank": 2}, {"name": "U-MA", "total": 130.2, "rank": 3}, {"name": "ふわきち", "total": 123.3, "rank": 4}, {"name": "shooooo", "total": 114.9, "rank": 5}, {"name": "まつ", "total": 99.9, "rank": 6}, {"name": "SoLucky", "total": 85.1, "rank": 7}, {"name": "D.K", "total": 50.7, "rank": 9}, {"name": "ちゃぴ", "total": 27.2, "rank": 10}, {"name": "たえ", "total": 15.9, "rank": 11}, {"name": "瀬野", "total": 4.6, "rank": 12}, {"name": "コジマる", "total": -7.7, "rank": 13}, {"name": "ゆうせい", "total": -30.3, "rank": 14}, {"name": "まみ", "total": -34.4, "rank": 15}, {"name": "Ryo.F", "total": -35.0, "rank": 16}, {"name": "むかい", "total": -76.1, "rank": 17}, {"name": "りすがめ", "total": -113.0, "rank": 18}, {"name": "九歩", "total": -124.3, "rank": 19}, {"name": "たかだ", "total": -131.1, "rank": 20}, {"name": "おき", "total": -136.7, "rank": 21}, {"name": "あしゅ", "total": -139.7, "rank": 22}, {"name": "冷えたご飯", "total": -158.5, "rank": 23}, {"name": "すわ", "total": -206.8, "rank": 24}], "7": [{"name": "太一", "total": 124.4, "rank": 1}, {"name": "まつ", "total": 82.9, "rank": 2}, {"name": "うぶめ", "total": 67.8, "rank": 3}, {"name": "こま", "total": 3.3, "rank": 4}, {"name": "MRB", "total": -26.2, "rank": 5}, {"name": "shooooo", "total": -52.5, "rank": 6}, {"name": "篠宮 悠", "total": -93.3, "rank": 7}, {"name": "九歩", "total": -106.4, "rank": 8}], "8": [{"name": "U-MA", "total": 222.8, "rank": 1}, {"name": "浦野P", "total": 206.9, "rank": 2}, {"name": "けいすけ", "total": 148.3, "rank": 3}, {"name": "ゆう", "total": 140.7, "rank": 4}, {"name": "ののり", "total": 91.9, "rank": 5}, {"name": "かんた", "total": 55.1, "rank": 6}, {"name": "向井", "total": 34.3, "rank": 7}, {"name": "るつお", "total": 22.7, "rank": 8}, {"name": "りすがめ", "total": 17.9, "rank": 9}, {"name": "タニグチ", "total": 8.6, "rank": 10}, {"name": "ながねぎ", "total": -13.6, "rank": 11}, {"name": "ぴの", "total": -20.2, "rank": 12}, {"name": "うさ", "total": -38.9, "rank": 13}, {"name": "九歩", "total": -81.4, "rank": 14}, {"name": "コジマる", "total": -88.0, "rank": 15}, {"name": "みず", "total": -94.5, "rank": 16}, {"name": "ちゃぴ", "total": -110.5, "rank": 17}, {"name": "あすぱん", "total": -142.9, "rank": 18}, {"name": "たまき", "total": -150.5, "rank": 19}, {"name": "らむ", "total": -208.7, "rank": 20}], "9": [{"name": "ひでおぶ", "total": 222.2, "rank": 1}, {"name": "別府プロ", "total": 64.5, "rank": 2}, {"name": "コジマる", "total": 24.8, "rank": 3}, {"name": "ちゃぴ", "total": 24.4, "rank": 4}, {"name": "ゆうせい", "total": 12.9, "rank": 5}, {"name": "U-MA", "total": -28.1, "rank": 6}, {"name": "高橋大地", "total": -72.7, "rank": 7}, {"name": "大和田澪央", "total": -114.8, "rank": 8}, {"name": "九歩", "total": -133.2, "rank": 9}], "10": [{"name": "大和田澪央", "total": 192.8, "rank": 1}, {"name": "別府プロ", "total": 167.6, "rank": 2}, {"name": "ちゃぴ", "total": 142.2, "rank": 3}, {"name": "コジマる", "total": -18.1, "rank": 4}, {"name": "ひでおぶ", "total": -34.4, "rank": 5}, {"name": "高橋大地", "total": -118.6, "rank": 6}, {"name": "九歩", "total": -155.3, "rank": 7}, {"name": "ゆうせい", "total": -176.2, "rank": 8}], "11": [{"name": "U-MA", "total": 172.9, "rank": 1}, {"name": "フルーツ", "total": 144.1, "rank": 2}, {"name": "のの", "total": 93.1, "rank": 3}, {"name": "りすがめ", "total": 41.5, "rank": 4}, {"name": "コジマる", "total": 10.3, "rank": 5}, {"name": "九歩", "total": 8.7, "rank": 6}, {"name": "shooooo", "total": -2.4, "rank": 7}, {"name": "篠宮 悠", "total": -43.6, "rank": 8}, {"name": "ちゃぴ", "total": -57.7, "rank": 9}, {"name": "ゆうせい", "total": -90.5, "rank": 10}, {"name": "にちゃで", "total": -129.5, "rank": 11}, {"name": "秀幸", "total": -146.9, "rank": 12}], "12": [{"name": "ひろゆき", "total": 369.9, "rank": 1}, {"name": "みやけっち", "total": 215.1, "rank": 2}, {"name": "ムーア", "total": 147.5, "rank": 3}, {"name": "ゆうせい", "total": 136.6, "rank": 4}, {"name": "アライグマ", "total": 128.6, "rank": 5}, {"name": "ほしの", "total": 101.3, "rank": 6}, {"name": "A383", "total": 83.3, "rank": 7}, {"name": "るつお", "total": 75.8, "rank": 8}, {"name": "にちゃで", "total": 69.9, "rank": 9}, {"name": "フルーツ", "total": 39.1, "rank": 10}, {"name": "おおもり", "total": 32.4, "rank": 11}, {"name": "MRB", "total": 30.2, "rank": 12}, {"name": "ルイコ", "total": -0.5, "rank": 13}, {"name": "旅の荒鷲", "total": -6.0, "rank": 14}, {"name": "渡辺", "total": -9.9, "rank": 15}, {"name": "コジマる", "total": -13.1, "rank": 16}, {"name": "D.K", "total": -15.2, "rank": 17}, {"name": "りすがめ", "total": -19.7, "rank": 18}, {"name": "やまとー", "total": -53.0, "rank": 19}, {"name": "大久保", "total": -63.7, "rank": 20}, {"name": "shooooo", "total": -66.4, "rank": 21}, {"name": "ぴの", "total": -79.2, "rank": 22}, {"name": "U-MA", "total": -92.6, "rank": 23}, {"name": "ゆう", "total": -153.5, "rank": 24}, {"name": "すわ", "total": -175.8, "rank": 25}, {"name": "九歩", "total": -179.7, "rank": 26}, {"name": "くわん", "total": -234.2, "rank": 27}, {"name": "ちゃぴ", "total": -267.2, "rank": 28}], "13": [{"name": "まつ", "total": 297.1, "rank": 1}, {"name": "りすがめ", "total": 179.7, "rank": 2}, {"name": "トモ", "total": 171.9, "rank": 3}, {"name": "ルイコ", "total": 119.8, "rank": 4}, {"name": "ちゃぴ", "total": 83.6, "rank": 5}, {"name": "ゆうせい", "total": 53.5, "rank": 6}, {"name": "やまそう", "total": 32.3, "rank": 7}, {"name": "Ryo.F", "total": 21.3, "rank": 8}, {"name": "らむ", "total": 14.0, "rank": 9}, {"name": "ふくちゃん", "total": 1.0, "rank": 10}, {"name": "九歩", "total": -3.5, "rank": 11}, {"name": "にちゃで", "total": -14.4, "rank": 12}, {"name": "稲熊", "total": -18.5, "rank": 13}, {"name": "ひろゆき", "total": -26.9, "rank": 14}, {"name": "あやみ", "total": -27.9, "rank": 15}, {"name": "ともや", "total": -53.7, "rank": 16}, {"name": "ツバサ", "total": -173.1, "rank": 17}, {"name": "U-MA", "total": -175.8, "rank": 18}, {"name": "フルーツ", "total": -180.7, "rank": 19}, {"name": "あねひめ", "total": -299.7, "rank": 20}], "14": [{"name": "ふくちゃん", "total": 157.8, "rank": 1}, {"name": "フルーツ", "total": 117.3, "rank": 2}, {"name": "ルイコ", "total": 102.2, "rank": 3}, {"name": "ゆうせい", "total": 93.2, "rank": 4}, {"name": "あやみ", "total": 81.2, "rank": 5}, {"name": "九歩", "total": 79.0, "rank": 6}, {"name": "りすがめ", "total": 75.3, "rank": 7}, {"name": "らむ", "total": 68.2, "rank": 8}, {"name": "やまそう", "total": 43.8, "rank": 9}, {"name": "U-MA", "total": -20.0, "rank": 10}, {"name": "やまとー", "total": -67.0, "rank": 11}, {"name": "ぼっち", "total": -96.1, "rank": 12}, {"name": "ちゃぴ", "total": -98.6, "rank": 13}, {"name": "チカちゃん", "total": -111.2, "rank": 14}, {"name": "にちゃで", "total": -133.7, "rank": 15}, {"name": "コジマる", "total": -291.4, "rank": 16}], "15": [{"name": "にちゃで", "total": 322.0, "rank": 1}, {"name": "秀幸", "total": 146.8, "rank": 2}, {"name": "ゆうま", "total": 139.0, "rank": 3}, {"name": "フルーツ", "total": 103.3, "rank": 4}, {"name": "あやみ", "total": 87.7, "rank": 5}, {"name": "げんがあ", "total": 73.8, "rank": 6}, {"name": "やまそう", "total": 72.6, "rank": 7}, {"name": "ちゃぴ", "total": 29.2, "rank": 8}, {"name": "ゆうせい", "total": 19.9, "rank": 9}, {"name": "かわにしっしも", "total": -8.8, "rank": 10}, {"name": "ルイコ", "total": -33.3, "rank": 12}, {"name": "らむ", "total": -50.8, "rank": 13}, {"name": "ツバサ", "total": -74.1, "rank": 14}, {"name": "ヒラケン", "total": -74.7, "rank": 15}, {"name": "あかねまる", "total": -81.8, "rank": 16}, {"name": "ゆう", "total": -99.3, "rank": 17}, {"name": "りすがめ", "total": -173.0, "rank": 18}, {"name": "九歩", "total": -182.2, "rank": 19}, {"name": "ぼっち", "total": -191.9, "rank": 20}], "16": [{"name": "ぼっち", "total": 186.4, "rank": 1}, {"name": "やまそう", "total": 140.4, "rank": 2}, {"name": "ルイコ", "total": 133.7, "rank": 3}, {"name": "げんがあ", "total": 132.2, "rank": 4}, {"name": "ツバサ", "total": 93.9, "rank": 5}, {"name": "ゆうせい", "total": 93.3, "rank": 6}, {"name": "コジマる", "total": 66.6, "rank": 7}, {"name": "あやみ", "total": 6.6, "rank": 8}, {"name": "にちゃで", "total": -17.8, "rank": 9}, {"name": "うぶめ", "total": -38.8, "rank": 10}, {"name": "ちゃぴ", "total": -52.2, "rank": 11}, {"name": "りすがめ", "total": -56.7, "rank": 12}, {"name": "ヒラケン", "total": -81.9, "rank": 13}, {"name": "九歩", "total": -166.1, "rank": 14}, {"name": "ちばちゃん", "total": -194.7, "rank": 15}, {"name": "あやね", "total": -244.9, "rank": 16}], "17": [{"name": "はやと", "total": 186.7, "rank": 1}, {"name": "ゆうせい", "total": 171.1, "rank": 2}, {"name": "らむ", "total": 155.9, "rank": 3}, {"name": "にちゃで", "total": 115.1, "rank": 4}, {"name": "やまそう", "total": 44.1, "rank": 5}, {"name": "まっさー", "total": 29.4, "rank": 6}, {"name": "げんがあ", "total": -3.2, "rank": 7}, {"name": "あやみ", "total": -6.6, "rank": 8}, {"name": "フルーツ", "total": -25.4, "rank": 9}, {"name": "shooooo", "total": -36.9, "rank": 10}, {"name": "ふくちゃん", "total": -48.9, "rank": 11}, {"name": "秀幸", "total": -80.4, "rank": 12}, {"name": "ぼっち", "total": -102.0, "rank": 13}, {"name": "ちゃぴ", "total": -107.0, "rank": 14}, {"name": "イナリ", "total": -132.1, "rank": 15}, {"name": "ルイコ", "total": -159.8, "rank": 16}], "18": [{"name": "稲熊", "total": 166.5, "rank": 1}, {"name": "Ryo.F", "total": 133.9, "rank": 2}, {"name": "やまそう", "total": 101.4, "rank": 3}, {"name": "ムーア", "total": 80.7, "rank": 4}, {"name": "あやみ", "total": 53.5, "rank": 5}, {"name": "にちゃで", "total": 52.0, "rank": 6}, {"name": "U-MA", "total": 30.9, "rank": 7}, {"name": "フルーツ", "total": -3.4, "rank": 8}, {"name": "ちゃぴ", "total": -38.2, "rank": 9}, {"name": "まっさー", "total": -39.0, "rank": 10}, {"name": "ヒラケン", "total": -45.9, "rank": 11}, {"name": "セイナ", "total": -48.8, "rank": 12}, {"name": "ルイコ", "total": -79.3, "rank": 13}, {"name": "ツバサ", "total": -107.8, "rank": 14}, {"name": "りすがめ", "total": -121.5, "rank": 15}, {"name": "たけちゃん", "total": -135.0, "rank": 16}], "19": [{"name": "ヒラケン", "total": 190.9, "rank": 1}, {"name": "やまそう", "total": 115.3, "rank": 2}, {"name": "えむこ", "total": 110.7, "rank": 3}, {"name": "ふくちゃん", "total": 98.7, "rank": 4}, {"name": "ぼっち", "total": 66.1, "rank": 5}, {"name": "ルイコ", "total": 60.7, "rank": 6}, {"name": "うぶめ", "total": 48.0, "rank": 7}, {"name": "ゆうじろう", "total": 42.6, "rank": 8}, {"name": "フルーツ", "total": 36.3, "rank": 9}, {"name": "まっさー", "total": -40.3, "rank": 10}, {"name": "にちゃで", "total": -54.8, "rank": 11}, {"name": "コジマる", "total": -86.6, "rank": 12}, {"name": "セイナ", "total": -94.8, "rank": 13}, {"name": "あやみ", "total": -145.0, "rank": 14}, {"name": "げんがあ", "total": -155.3, "rank": 15}, {"name": "九歩", "total": -192.5, "rank": 16}], "20": [{"name": "コジマる", "total": 334.2, "rank": 1}, {"name": "だにー", "total": 241.0, "rank": 2}, {"name": "あやみ", "total": 97.7, "rank": 3}, {"name": "非公表", "total": 51.6, "rank": 4}, {"name": "はやと", "total": 42.3, "rank": 5}, {"name": "らむ", "total": 40.0, "rank": 6}, {"name": "やまそう", "total": 9.6, "rank": 7}, {"name": "ツバサ", "total": -1.8, "rank": 8}, {"name": "やまとー", "total": -10.9, "rank": 9}, {"name": "ヒラケン", "total": -20.8, "rank": 10}, {"name": "フルーツ", "total": -25.6, "rank": 11}, {"name": "ロベ", "total": -85.8, "rank": 12}, {"name": "ちゃぴ", "total": -88.5, "rank": 13}, {"name": "げんがあ", "total": -161.0, "rank": 14}, {"name": "かわにしっしも", "total": -174.5, "rank": 15}, {"name": "ぼっち", "total": -247.5, "rank": 16}], "21": [{"name": "やまそう", "total": 191.2, "rank": 1}, {"name": "shooooo", "total": 114.6, "rank": 2}, {"name": "フルーツ", "total": 101.6, "rank": 3}, {"name": "トモナガ", "total": 30.5, "rank": 4}, {"name": "あやみ", "total": 27.8, "rank": 5}, {"name": "ぽーとぴあ", "total": 13.7, "rank": 6}, {"name": "ふくちゃん", "total": -2.8, "rank": 7}, {"name": "ルイコ", "total": -9.3, "rank": 8}, {"name": "ツバサ", "total": -54.6, "rank": 9}, {"name": "たけちゃん", "total": -89.5, "rank": 10}, {"name": "はるりこ", "total": -120.8, "rank": 11}, {"name": "セイナ", "total": -202.4, "rank": 12}]};
+const CUM    = [{"name": "やまそう", "total": 750.7, "events": 9, "wins": 1, "rank": 1}, {"name": "らむ", "total": 536.0, "events": 10, "wins": 1, "rank": 2}, {"name": "まつ", "total": 479.9, "events": 3, "wins": 1, "rank": 3}, {"name": "U-MA", "total": 464.8, "events": 11, "wins": 3, "rank": 4}, {"name": "ゆうせい", "total": 383.1, "events": 13, "wins": 0, "rank": 5}, {"name": "ひろゆき", "total": 343.0, "events": 2, "wins": 1, "rank": 6}, {"name": "ほしの", "total": 339.2, "events": 3, "wins": 0, "rank": 7}, {"name": "フルーツ", "total": 306.6, "events": 10, "wins": 0, "rank": 8}, {"name": "madlife", "total": 296.5, "events": 1, "wins": 1, "rank": 9}, {"name": "だにー", "total": 241.0, "events": 1, "wins": 0, "rank": 10}, {"name": "ムーア", "total": 235.9, "events": 5, "wins": 0, "rank": 11}, {"name": "別府プロ", "total": 232.1, "events": 2, "wins": 0, "rank": 12}, {"name": "みやけっち", "total": 215.1, "events": 1, "wins": 0, "rank": 13}, {"name": "にちゃで", "total": 208.8, "events": 9, "wins": 1, "rank": 14}, {"name": "浦野P", "total": 206.9, "events": 1, "wins": 0, "rank": 15}, {"name": "MFC", "total": 206.8, "events": 1, "wins": 0, "rank": 16}, {"name": "ふくちゃん", "total": 205.8, "events": 5, "wins": 1, "rank": 17}, {"name": "ひでおぶ", "total": 187.8, "events": 2, "wins": 1, "rank": 18}, {"name": "敢太", "total": 179.3, "events": 1, "wins": 1, "rank": 19}, {"name": "あやみ", "total": 175.0, "events": 9, "wins": 0, "rank": 20}, {"name": "トモ", "total": 171.9, "events": 1, "wins": 0, "rank": 21}, {"name": "ちば", "total": 158.4, "events": 2, "wins": 1, "rank": 22}, {"name": "けいすけ", "total": 148.3, "events": 1, "wins": 0, "rank": 23}, {"name": "稲熊", "total": 148.0, "events": 2, "wins": 1, "rank": 24}, {"name": "ゆうま", "total": 139.0, "events": 1, "wins": 0, "rank": 25}, {"name": "ぱるぴー", "total": 134.8, "events": 3, "wins": 0, "rank": 26}, {"name": "ルイコ", "total": 134.2, "events": 9, "wins": 0, "rank": 27}, {"name": "Ryo.F", "total": 132.1, "events": 5, "wins": 0, "rank": 28}, {"name": "shooooo", "total": 129.1, "events": 9, "wins": 0, "rank": 29}, {"name": "アライグマ", "total": 128.6, "events": 1, "wins": 0, "rank": 30}, {"name": "うぶめ", "total": 127.6, "events": 5, "wins": 0, "rank": 31}, {"name": "太一", "total": 124.4, "events": 1, "wins": 1, "rank": 32}, {"name": "ふわきち", "total": 123.3, "events": 1, "wins": 0, "rank": 33}, {"name": "つばきりょう", "total": 121.2, "events": 1, "wins": 0, "rank": 34}, {"name": "はやと", "total": 116.0, "events": 5, "wins": 1, "rank": 35}, {"name": "りすがめ", "total": 115.9, "events": 12, "wins": 0, "rank": 36}, {"name": "えむこ", "total": 110.7, "events": 1, "wins": 0, "rank": 37}, {"name": "るつお", "total": 98.5, "events": 2, "wins": 0, "rank": 38}, {"name": "のの", "total": 93.1, "events": 1, "wins": 0, "rank": 39}, {"name": "チェリ", "total": 92.6, "events": 1, "wins": 0, "rank": 40}, {"name": "ののり", "total": 91.9, "events": 1, "wins": 0, "rank": 41}, {"name": "SoLucky", "total": 85.1, "events": 1, "wins": 0, "rank": 42}, {"name": "A383", "total": 83.3, "events": 1, "wins": 0, "rank": 43}, {"name": "大和田澪央", "total": 78.0, "events": 2, "wins": 1, "rank": 44}, {"name": "MRB", "total": 60.5, "events": 3, "wins": 0, "rank": 45}, {"name": "おにぎり", "total": 55.9, "events": 1, "wins": 0, "rank": 46}, {"name": "ゆうじろう", "total": 42.6, "events": 1, "wins": 0, "rank": 47}, {"name": "ぴの", "total": 37.4, "events": 3, "wins": 0, "rank": 48}, {"name": "D.K", "total": 35.5, "events": 2, "wins": 0, "rank": 49}, {"name": "向井", "total": 34.3, "events": 1, "wins": 0, "rank": 50}, {"name": "おおもり", "total": 32.4, "events": 1, "wins": 0, "rank": 51}, {"name": "トモナガ", "total": 30.5, "events": 1, "wins": 0, "rank": 52}, {"name": "だてまき", "total": 30.2, "events": 1, "wins": 0, "rank": 53}, {"name": "旅の荒鷲", "total": 22.3, "events": 2, "wins": 0, "rank": 54}, {"name": "にじま", "total": 22.2, "events": 2, "wins": 0, "rank": 55}, {"name": "たえ", "total": 15.9, "events": 1, "wins": 0, "rank": 56}, {"name": "ぽーとぴあ", "total": 13.7, "events": 1, "wins": 0, "rank": 57}, {"name": "タニグチ", "total": 8.6, "events": 1, "wins": 0, "rank": 58}, {"name": "瀬野", "total": 4.6, "events": 1, "wins": 0, "rank": 59}, {"name": "渡辺", "total": -9.9, "events": 1, "wins": 0, "rank": 60}, {"name": "ながねぎ", "total": -13.6, "events": 1, "wins": 0, "rank": 61}, {"name": "ヒラケン", "total": -32.4, "events": 5, "wins": 1, "rank": 62}, {"name": "まみ", "total": -34.4, "events": 1, "wins": 0, "rank": 63}, {"name": "うさ", "total": -38.9, "events": 1, "wins": 0, "rank": 64}, {"name": "まっさー", "total": -49.9, "events": 3, "wins": 0, "rank": 65}, {"name": "ともや", "total": -53.7, "events": 1, "wins": 0, "rank": 66}, {"name": "大久保", "total": -63.7, "events": 1, "wins": 0, "rank": 67}, {"name": "かんた", "total": -65.9, "events": 2, "wins": 0, "rank": 68}, {"name": "えび", "total": -74.4, "events": 1, "wins": 0, "rank": 69}, {"name": "石倉", "total": -75.6, "events": 1, "wins": 0, "rank": 70}, {"name": "むかい", "total": -76.1, "events": 1, "wins": 0, "rank": 71}, {"name": "コジマる", "total": -78.7, "events": 11, "wins": 1, "rank": 72}, {"name": "秀幸", "total": -80.5, "events": 3, "wins": 0, "rank": 73}, {"name": "あかねまる", "total": -81.8, "events": 1, "wins": 0, "rank": 74}, {"name": "ロベ", "total": -85.8, "events": 1, "wins": 0, "rank": 75}, {"name": "みず", "total": -94.5, "events": 1, "wins": 0, "rank": 76}, {"name": "チカちゃん", "total": -111.2, "events": 1, "wins": 0, "rank": 77}, {"name": "ゆう", "total": -112.1, "events": 3, "wins": 0, "rank": 78}, {"name": "サトシ", "total": -112.7, "events": 1, "wins": 0, "rank": 79}, {"name": "えり", "total": -112.8, "events": 1, "wins": 0, "rank": 80}, {"name": "げんがあ", "total": -113.5, "events": 5, "wins": 0, "rank": 81}, {"name": "ゲンツ", "total": -115.5, "events": 1, "wins": 0, "rank": 82}, {"name": "はるりこ", "total": -120.8, "events": 1, "wins": 0, "rank": 83}, {"name": "なの", "total": -122.2, "events": 2, "wins": 0, "rank": 84}, {"name": "やまとー", "total": -130.9, "events": 3, "wins": 0, "rank": 85}, {"name": "たかだ", "total": -131.1, "events": 1, "wins": 0, "rank": 86}, {"name": "イナリ", "total": -132.1, "events": 1, "wins": 0, "rank": 87}, {"name": "おき", "total": -136.7, "events": 1, "wins": 0, "rank": 88}, {"name": "篠宮 悠", "total": -136.9, "events": 2, "wins": 0, "rank": 89}, {"name": "うめちゃん", "total": -139.2, "events": 1, "wins": 0, "rank": 90}, {"name": "あしゅ", "total": -139.7, "events": 1, "wins": 0, "rank": 91}, {"name": "あすぱん", "total": -142.9, "events": 1, "wins": 0, "rank": 92}, {"name": "ちょろ", "total": -146.5, "events": 1, "wins": 0, "rank": 93}, {"name": "たまき", "total": -150.5, "events": 1, "wins": 0, "rank": 94}, {"name": "はやみ", "total": -153.6, "events": 1, "wins": 0, "rank": 95}, {"name": "冷えたご飯", "total": -154.9, "events": 2, "wins": 0, "rank": 96}, {"name": "おおけん", "total": -158.3, "events": 1, "wins": 0, "rank": 97}, {"name": "kazutaka", "total": -172.4, "events": 1, "wins": 0, "rank": 98}, {"name": "かわにしっしも", "total": -183.3, "events": 2, "wins": 0, "rank": 99}, {"name": "高橋大地", "total": -191.3, "events": 2, "wins": 0, "rank": 100}, {"name": "ちばちゃん", "total": -194.7, "events": 1, "wins": 0, "rank": 101}, {"name": "たけちゃん", "total": -224.5, "events": 2, "wins": 0, "rank": 102}, {"name": "くわん", "total": -234.2, "events": 1, "wins": 0, "rank": 103}, {"name": "あやね", "total": -244.9, "events": 1, "wins": 0, "rank": 104}, {"name": "かわしま", "total": -252.3, "events": 2, "wins": 0, "rank": 105}, {"name": "こま", "total": -280.4, "events": 3, "wins": 0, "rank": 106}, {"name": "あねひめ", "total": -299.7, "events": 1, "wins": 0, "rank": 107}, {"name": "ツバサ", "total": -317.5, "events": 6, "wins": 0, "rank": 108}, {"name": "セイナ", "total": -346.0, "events": 3, "wins": 0, "rank": 109}, {"name": "すわ", "total": -382.6, "events": 2, "wins": 0, "rank": 110}, {"name": "ぼっち", "total": -385.0, "events": 6, "wins": 1, "rank": 111}, {"name": "ちゃぴ", "total": -427.8, "events": 15, "wins": 1, "rank": 112}, {"name": "九歩", "total": -1708.2, "events": 16, "wins": 0, "rank": 113}];
+const META   = {"1": {"date": "2022.7.23", "label": "#01"}, "2": {"date": "2023.10.1", "label": "#02"}, "3": {"date": "2023.1.28", "label": "#03"}, "4": {"date": "2023.3.18", "label": "#04"}, "5": {"date": "2023.4.16", "label": "#05"}, "6": {"date": "2023.5.20", "label": "#06"}, "7": {"date": "2023.6.18", "label": "#07"}, "8": {"date": "2023.7.22", "label": "#08"}, "9": {"date": "2023.9.9", "label": "#09"}, "10": {"date": "2023.11.25", "label": "#10"}, "11": {"date": "2024.2.10", "label": "#11"}, "12": {"date": "2024.3.30", "label": "#12"}, "13": {"date": "2024.6.15", "label": "#13"}, "14": {"date": "2024.9.28", "label": "#14"}, "15": {"date": "2025.2.1", "label": "#15"}, "16": {"date": "2025.3.29", "label": "#16"}, "17": {"date": "2025.5.25", "label": "#17"}, "18": {"date": "2025.7.26", "label": "#18"}, "19": {"date": "2025.9.20", "label": "#19"}, "20": {"date": "2025.12.6", "label": "#20"}, "21": {"date": "2026.1.17", "label": "#21"}};
+
+const fmt = v => (v>0?'+':'')+v.toFixed(1);
+const sc  = v => v>0?'sp':v<0?'sn':'sz';
+const rc  = r => r===1?'c1':r===2?'c2':r===3?'c3':'cx';
+
+// ── Podium
+const medals=['🥇','🥈','🥉'], gcls=['p1','p2','p3'];
+document.getElementById('podium').innerHTML = CUM.slice(0,3).map((p,i)=>`
+  <div class="pcard ${gcls[i]}">
+    <div class="pmed">${medals[i]}</div>
+    <div class="pnm" style="cursor:pointer" onclick="openModal('${p.name.replace(/'/g,"\'")}')">${p.name}</div>
+    <div class="psc">${fmt(p.total)}</div>
+    <div class="pmt">${p.events}大会 · ${p.wins}優勝</div>
+  </div>
+`).join('');
+
+// ── Ranking table
+document.getElementById('rbody').innerHTML = CUM.map(p=>`
+  <tr>
+    <td><span class="rn ${rc(p.rank)}">${p.rank}</span></td>
+    <td>
+      <span class="pnm2" onclick="openModal('${p.name.replace(/'/g,"\'")}')">${p.name}</span>
+      ${p.wins>0?`<span class="wn">👑 ${p.wins}</span>`:''}
+    </td>
+    <td class="r ec">${p.events}</td>
+    <td class="r ec">${p.wins}</td>
+    <td class="r"><span class="sv ${sc(p.total)}">${fmt(p.total)}</span></td>
+  </tr>
+`).join('');
+
+// ── Archive
+const nums = Object.keys(EVENTS).map(Number).sort((a,b)=>b-a);
+document.getElementById('alist').innerHTML = nums.map(n=>{
+  const ps = [...EVENTS[n]].sort((a,b)=>(a.rank||99)-(b.rank||99));
+  const w  = ps[0];
+  const m  = META[String(n)]||{};
+  const lbl = m.label||('#'+String(n).padStart(2,'0'));
+  const dt  = m.date||'';
+  return `
+    <div class="ecard" id="ev${n}">
+      <div class="ehead" onclick="tog(${n})">
+        <div>
+          <div class="enum">S.LEAGUE ${lbl}${dt?' · '+dt:''}</div>
+          <div class="etl">${ps.length}名参加</div>
+        </div>
+        <div style="display:flex;align-items:center">
+          <div class="ewrap">
+            <span class="ewcr">🏆</span>
+            <span class="ewnm">${w.name}</span>
+            <span class="ewsc">${fmt(w.total)}</span>
+          </div>
+          <span class="chv">▼</span>
+        </div>
+      </div>
+      <div class="ebody">
+        <table class="etbl"><tbody>
+          ${ps.map(p=>`
+            <tr>
+              <td><span class="ern ${rc(p.rank||0)}">${p.rank||'—'}</span></td>
+              <td style="font-weight:${(p.rank||99)<=3?700:400}">${p.name}</td>
+              <td><span class="sv ${sc(p.total)}">${fmt(p.total)}</span></td>
+            </tr>
+          `).join('')}
+        </tbody></table>
+      </div>
+    </div>
+  `;
+}).join('');
+
+function tog(n){document.getElementById('ev'+n).classList.toggle('open')}
+
+// ── Tabs
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on');
+  document.getElementById('p-'+t.dataset.tab).classList.add('on');
+}));
+
+// ── Modal
+function openModal(name) {
+  // 累計データ取得
+  const cum = CUM.find(p=>p.name===name);
+  if (!cum) return;
+
+  document.getElementById('m-name').textContent = name;
+
+  // サマリー統計
+  const totalStr = fmt(cum.total);
+  const scCls = cum.total>0?'sp':cum.total<0?'sn':'sz';
+  document.getElementById('m-stats').innerHTML = `
+    <div>
+      <div class="mstat-v ${scCls}">${totalStr}</div>
+      <div class="mstat-l">累計得点</div>
+    </div>
+    <div>
+      <div class="mstat-v">${cum.events}</div>
+      <div class="mstat-l">参加大会数</div>
+    </div>
+    <div>
+      <div class="mstat-v" style="color:var(--gold)">${cum.wins}</div>
+      <div class="mstat-l">優勝回数</div>
+    </div>
+  `;
+
+  // 各大会の成績（番号昇順）
+  const evNums = Object.keys(EVENTS).map(Number).sort((a,b)=>a-b);
+  const rows = [];
+  let best = null, worst = null;
+
+  evNums.forEach(n => {
+    const found = EVENTS[n].find(p=>p.name===name);
+    if (!found) return;
+    const m = META[String(n)]||{};
+    const lbl = m.label||('#'+String(n).padStart(2,'0'));
+    const dt  = m.date||'';
+    const rank = found.rank||'—';
+    const score = found.total;
+    const isWin = found.rank===1;
+
+    if (best===null || score > best.score) best={lbl,score};
+    if (worst===null || score < worst.score) worst={lbl,score};
+
+    const rankIcon = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'';
+    const rankCls  = rc(rank);
+    rows.push(`
+      <div class="mtbl-row${isWin?' win':''}">
+        <span class="mlbl">${lbl}</span>
+        <span class="mdate">${dt}</span>
+        <span class="mrank ${rankCls}">${rankIcon||rank}</span>
+        <span class="mscore ${sc(score)}">${fmt(score)}</span>
+      </div>
+    `);
+  });
+
+  document.getElementById('m-body').innerHTML = rows.join('');
+
+  // フッター: ベスト・ワースト
+  const footParts = [];
+  if (best)  footParts.push(`ベスト ${best.lbl}：${fmt(best.score)}`);
+  if (worst) footParts.push(`ワースト ${worst.lbl}：${fmt(worst.score)}`);
+  document.getElementById('m-foot').textContent = footParts.join('　　');
+
+  document.getElementById('modal-bg').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modal-bg')) closeModalDirect();
+}
+function closeModalDirect() {
+  document.getElementById('modal-bg').classList.remove('show');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key==='Escape') closeModalDirect(); });
+</script>
+</body>
+</html>
