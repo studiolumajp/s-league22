@@ -458,7 +458,7 @@ input.si:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(2
   <div class="admin-login-box">
     <div class="logo"><span>S</span>.League<span style="color:#c9862a"> 22</span></div>
     <div class="sub">ADMIN PANEL</div>
-    <input type="email" id="adm-user" placeholder="Email" autocomplete="off">
+    <input type="text" id="adm-user" placeholder="Username" autocomplete="off">
     <input type="password" id="adm-pass" placeholder="Password" onkeydown="if(event.key==='Enter')doAdminLogin()">
     <button onclick="doAdminLogin()">ログイン</button>
     <div class="err" id="adm-err"></div>
@@ -522,16 +522,11 @@ input.si:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(2
     <!-- ── アカウント管理 ── -->
     <div id="adm-creds" class="admin-pg">
       <div class="acard"><div class="ach">🔐 Adminアカウント管理</div><div class="acb">
-        <div class="hint">アカウントはSupabase Authで管理されています。追加・削除はSupabaseダッシュボード（Authentication → Users）から行ってください。</div>
-        <div style="background:#eff6ff;border-radius:8px;padding:12px;font-size:.8rem;color:var(--blue);line-height:1.7;margin-top:8px;">
-          <strong>🔗 Supabaseダッシュボード</strong><br>
-          <a href="https://supabase.com/dashboard/project/krtgxuepwjrffnmdtfto/auth/users" target="_blank" style="color:var(--blue);">
-            ユーザー管理ページを開く →
-          </a><br><br>
-          <strong>現在ログイン中：</strong> <span id="current-user-email">-</span>
-        </div>
-        <div style="margin-top:12px;">
-          <button class="btn btn-red" onclick="doSignOut()">🚪 ログアウト</button>
+        <div class="hint">Adminページにアクセスできるアカウントを管理します。Username・Passwordを自由に設定できます。</div>
+        <div class="cred-list" id="cred-list"></div>
+        <div style="margin-top:10px;display:flex;gap:8px;">
+          <button class="btn btn-green" onclick="addCred()">＋ アカウントを追加</button>
+          <button class="btn btn-blue" onclick="saveCreds()">✓ 保存</button>
         </div>
       </div></div>
       <div class="acard"><div class="ach">💡 将来：参加者ログイン機能について</div><div class="acb">
@@ -735,13 +730,15 @@ const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 // ════════════════════════════════════════════════════════
 // STATE
 // ════════════════════════════════════════════════════════
+// Admin認証情報（Supabaseに保存、起動時に読み込み）
+let ADMIN_CREDS = [{user:'admin',pass:'sleague22'}];
+
 let scores    = {};
 let penalties = [];
 let pnames    = {};
 let teamnames = {};
 let config    = {};
 let curRound=0, curTable=0, editPlayer=null;
-let supaSession = null; // Supabase auth session
 
 // DB キー定数
 const DB_KEY_SCORES   = 'scores';
@@ -772,13 +769,16 @@ async function persist() {
 // ── 全データをSupabaseから読み込む ──
 async function loadAll() {
   showLoadingOverlay(true);
-  [scores, penalties, pnames, teamnames, config] = await Promise.all([
+  const [sc,pn,pm,tn,cfg,ac] = await Promise.all([
     dbGet(DB_KEY_SCORES,    {}),
     dbGet(DB_KEY_PENALTIES, []),
     dbGet(DB_KEY_PNAMES,    {}),
     dbGet(DB_KEY_TNAMES,    {}),
     dbGet(DB_KEY_CONFIG,    {}),
+    dbGet('admin_creds',    null),
   ]);
+  scores=sc; penalties=pn; pnames=pm; teamnames=tn; config=cfg;
+  if(ac&&ac.length) ADMIN_CREDS=ac;
   showLoadingOverlay(false);
 }
 
@@ -1183,20 +1183,18 @@ function openAdminLogin(){
   setTimeout(()=>document.getElementById('adm-user').focus(),100);
 }
 function closeAdminLogin(){document.getElementById('admin-overlay').style.display='none';}
-async function doAdminLogin(){
-  const email=document.getElementById('adm-user').value.trim();
-  const pass=document.getElementById('adm-pass').value;
-  document.getElementById('adm-err').textContent='ログイン中...';
-  const {data,error}=await supa.auth.signInWithPassword({email,password:pass});
-  if(error){
-    document.getElementById('adm-err').textContent='メールアドレスまたはパスワードが違います';
-    return;
+function doAdminLogin(){
+  const u=document.getElementById('adm-user').value.trim();
+  const p=document.getElementById('adm-pass').value;
+  const ok=ADMIN_CREDS.some(c=>c.user===u&&c.pass===p);
+  if(ok){
+    document.getElementById('admin-overlay').style.display='none';
+    document.getElementById('main-app').style.display='none';
+    document.getElementById('admin-panel').style.display='block';
+    renderAdminPlayers();renderAdminTeams();renderAdminCreds();renderResetGrid();loadConfig();
+  } else {
+    document.getElementById('adm-err').textContent='ユーザー名またはパスワードが違います';
   }
-  supaSession=data.session;
-  document.getElementById('admin-overlay').style.display='none';
-  document.getElementById('main-app').style.display='none';
-  document.getElementById('admin-panel').style.display='block';
-  renderAdminPlayers();renderAdminTeams();renderAdminCreds();renderResetGrid();loadConfig();
 }
 function closeAdmin(){
   document.getElementById('admin-panel').style.display='none';
@@ -1264,21 +1262,27 @@ function saveTeams(){
 // ADMIN: CREDENTIALS
 // ════════════════════════════════════════════════════════
 function renderAdminCreds(){
-  // Supabase Auth管理のため、現在のログインユーザーを表示
-  supa.auth.getUser().then(({data})=>{
-    const el=document.getElementById('current-user-email');
-    if(el&&data?.user) el.textContent=data.user.email;
-  });
+  const list=document.getElementById('cred-list');
+  list.innerHTML=ADMIN_CREDS.map((c,i)=>`
+    <div class="cred-row">
+      <input type="text" id="cu-${i}" value="${c.user}" placeholder="Username">
+      <input type="password" id="cp-${i}" value="${c.pass}" placeholder="Password">
+      <button class="del-cred" onclick="delCred(${i})">削除</button>
+    </div>`).join('');
 }
-function addCred(){toast('アカウント追加はSupabaseダッシュボードから行ってください');}
-function delCred(){toast('アカウント削除はSupabaseダッシュボードから行ってください');}
-function saveCreds(){toast('アカウント管理はSupabaseダッシュボードから行ってください');}
-function doSignOut(){
-  supa.auth.signOut().then(()=>{
-    supaSession=null;
-    closeAdmin();
-    toast('ログアウトしました');
-  });
+function addCred(){ADMIN_CREDS.push({user:'',pass:''});renderAdminCreds();}
+function delCred(i){
+  if(ADMIN_CREDS.length<=1){toast('⚠️ 最低1つのアカウントが必要です');return;}
+  ADMIN_CREDS.splice(i,1);renderAdminCreds();
+}
+function saveCreds(){
+  const newC=ADMIN_CREDS.map((_,i)=>({
+    user:document.getElementById(`cu-${i}`)?.value.trim()||'',
+    pass:document.getElementById(`cp-${i}`)?.value||''
+  })).filter(c=>c.user&&c.pass);
+  if(!newC.length){toast('⚠️ 有効なアカウントを1つ以上入力してください');return;}
+  ADMIN_CREDS.length=0;newC.forEach(c=>ADMIN_CREDS.push(c));
+  dbSet('admin_creds', ADMIN_CREDS).then(()=>toast('✓ アカウントを保存しました'));
 }
 
 // ════════════════════════════════════════════════════════
