@@ -13,10 +13,16 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 /* Wix embed: bodyはスクロール主体、横あふれはclipで防ぐ */
-html,body{
+html{
+  background:var(--bg);
+  overflow-x:hidden;
+}
+body{
   background:var(--bg);color:var(--txt);
   font-family:'Noto Sans JP',sans-serif;font-weight:300;
-  overflow-x:clip;          /* Wix iframeでも横スクロール防止 */
+  overflow-x:hidden;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
   -webkit-text-size-adjust:100%;
 }
 
@@ -162,85 +168,97 @@ main{max-width:1080px;margin:0 auto;padding:24px 14px 40px}
 .etbl td:last-child{text-align:right}
 .ern{font-family:'Bebas Neue',sans-serif;font-size:14px;width:30px;display:inline-block;text-align:center}
 
-/* ── MODAL (legacy - unused) ── */
-/* ── PLAYER DETAIL CARD (tap-position aware) ── */
-.pcard-outer{
-  position:fixed;z-index:500;
-  left:0;right:0;
-  padding:0 10px;
-  pointer-events:none;
+/* ── PLAYER DETAIL MODAL ── */
+/* Wix iframe対応: position:fixedはiframe内でviewport基準で動作する */
+.modal-overlay{
+  display:none;
+  position:fixed;inset:0;z-index:900;
+  background:rgba(5,8,16,.85);
+  -webkit-tap-highlight-color:transparent;
 }
-.pcard-inner{
-  pointer-events:all;
-  background:var(--card);border:1px solid var(--bdr);border-radius:14px;
-  max-height:72dvh;
+.modal-overlay.show{display:flex;align-items:flex-end;justify-content:center}
+.modal-sheet{
+  background:var(--card);
+  border:1px solid var(--bdr);
+  border-radius:16px 16px 0 0;
+  width:100%;max-width:520px;
+  /* 高さはコンテンツ次第だが上限を設ける */
+  max-height:80vh;
   display:flex;flex-direction:column;
-  box-shadow:0 8px 40px rgba(0,0,0,.7);
-  animation:pcslide .2s ease;
-  max-width:480px;margin:0 auto;
-  border-radius:14px;overflow:hidden; /* border-radiusのclipに必要 */
+  box-shadow:0 -8px 40px rgba(0,0,0,.6);
+  animation:sheetup .25s cubic-bezier(.32,0,.67,0);
+  /* touch-action: iOSでカード内スクロールを許可 */
+  touch-action:pan-y;
 }
-@keyframes pcslide{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
-.pcard-head{
-  padding:16px 16px 12px;
+@keyframes sheetup{from{transform:translateY(100%);opacity:.5}to{transform:none;opacity:1}}
+/* ドラッグハンドル */
+.modal-handle{
+  width:36px;height:4px;background:rgba(255,255,255,.18);border-radius:2px;
+  margin:12px auto 0;flex-shrink:0;
+}
+.modal-head{
+  padding:14px 16px 12px;
   border-bottom:1px solid var(--bdr);
   background:linear-gradient(135deg,rgba(201,168,76,.08) 0%,transparent 60%);
-  position:relative;flex-shrink:0
+  position:relative;flex-shrink:0;
 }
-.pcard-close{
-  position:absolute;top:12px;right:12px;
+.modal-close{
+  position:absolute;top:10px;right:12px;
   background:rgba(255,255,255,.1);border:none;cursor:pointer;
   color:var(--muted);font-size:14px;line-height:1;
-  padding:5px 8px;border-radius:6px;
-  -webkit-tap-highlight-color:transparent;transition:background .15s
+  padding:6px 9px;border-radius:6px;
+  -webkit-tap-highlight-color:transparent;transition:background .15s;
+  min-width:32px;min-height:32px; /* タップ領域を大きく */
 }
-.pcard-close:active{background:rgba(255,255,255,.2)}
-.pcard-player{
+.modal-close:active{background:rgba(255,255,255,.22)}
+.modal-player{
   font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.06em;
-  color:var(--txt);margin-bottom:8px
+  color:var(--txt);margin-bottom:8px;padding-right:36px; /* closeボタン分 */
 }
-.pcard-stats{display:flex;gap:18px;flex-wrap:wrap}
-.mstat-v{
-  font-family:'Hiragino Kaku Gothic ProN','Hiragino Kaku Gothic Pro','ヒラギノ角ゴ ProN W3','Noto Sans JP',sans-serif;
-  font-size:15.3px;font-weight:600;letter-spacing:.02em
-}
-.mstat-l{font-family:'Hiragino Kaku Gothic ProN','Hiragino Kaku Gothic Pro','ヒラギノ角ゴ ProN W3','Noto Sans JP',sans-serif;font-size:8px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
-.pcard-section-head{
+.modal-stats{display:flex;gap:18px;flex-wrap:wrap}
+.mstat-v{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:.04em}
+.mstat-l{font-size:8px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
+.modal-cols{
   padding:8px 16px 6px;
-  font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
   color:var(--muted);border-bottom:1px solid var(--bdr);
-  display:grid;grid-template-columns:68px 1fr 46px 52px;gap:4px;
-  flex-shrink:0
+  display:grid;grid-template-columns:72px 1fr 44px 52px;gap:4px;
+  flex-shrink:0;
 }
-.pcard-body{
-  overflow-y:scroll;   /* autoではなくscrollを明示（iOS対策）*/
+/* ★ ここが核心: スクロール可能エリア */
+.modal-body{
+  overflow-y:auto;
   -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;   /* 親ページへのスクロール伝播を防止 */
   flex:1;
-  min-height:0;        /* flexboxでshrinkするために必要 */
+  min-height:0;                  /* flexboxでの高さ確保に必須 */
 }
-.pcard-row{
-  display:grid;grid-template-columns:68px 1fr 46px 52px;gap:4px;
+.modal-row{
+  display:grid;grid-template-columns:72px 1fr 44px 52px;gap:4px;
   padding:9px 16px;border-bottom:1px solid rgba(29,37,56,.5);
   align-items:center;
 }
-.pcard-row:last-child{border-bottom:none}
-.pcard-row.win .pclbl{color:var(--gold)}
-.pclbl{font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.12em;color:var(--gold)}
-.pcdate{font-size:9px;color:var(--muted)}
-.pcrank{font-family:'Bebas Neue',sans-serif;font-size:14px;text-align:center}
-.pcscore{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.04em;text-align:right}
-.pcard-foot{
+.modal-row:last-child{border-bottom:none}
+.modal-row.win .mlbl{color:var(--gold)}
+.mlbl{font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.12em;color:var(--gold)}
+.mdate{font-size:9px;color:var(--muted)}
+.mrank{font-family:'Bebas Neue',sans-serif;font-size:14px;text-align:center}
+.mscore{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.04em;text-align:right}
+.modal-foot{
   padding:10px 16px;
   padding-bottom:max(10px,env(safe-area-inset-bottom));
   border-top:1px solid var(--bdr);
-  font-size:9px;color:var(--muted);text-align:center;flex-shrink:0
+  font-size:9px;color:var(--muted);text-align:center;flex-shrink:0;
 }
-/* 背景タップで閉じるオーバーレイ */
-.pcard-overlay{
-  position:fixed;inset:0;z-index:499;
-  background:rgba(0,0,0,0);  /* 透明 = UIを邪魔しない */
+/* デスクトップ: 中央寄せ */
+@media(min-width:640px){
+  .modal-overlay{align-items:center}
+  .modal-sheet{border-radius:16px;max-height:85vh}
+  .modal-handle{display:none}
+  .modal-head{padding:20px 22px 16px}
+  .modal-cols,.modal-row{grid-template-columns:80px 1fr 50px 58px;padding-left:22px;padding-right:22px}
+  .modal-player{font-size:26px}
 }
-
 
 /* ── TEAM PODIUM ── */
 .tpodium{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:28px}
@@ -338,11 +356,7 @@ main{max-width:1080px;margin:0 auto;padding:24px 14px 40px}
   .td-pts,.td-team,.td-run{padding:10px 12px}
   .tdet-head{padding:20px 24px}
   .tdet-name{font-size:22px}
-  .pcard-inner{max-height:80vh}
-  .pcard-section-head,.pcard-row{grid-template-columns:80px 1fr 60px 60px;padding:10px 22px}
-  .pcard-player{font-size:26px}
-  .pclbl{font-size:13px}
-  .pcrank,.pcscore{font-size:15px}
+
   .ewrap{display:flex}
 }
 </style>
@@ -405,19 +419,20 @@ main{max-width:1080px;margin:0 auto;padding:24px 14px 40px}
   </div>
 </main>
 
-<!-- PLAYER DETAIL CARD (tap-position aware) -->
-<div id="player-card" class="pcard-outer" style="display:none">
-  <div class="pcard-inner" id="pcard-inner">
-    <div class="pcard-head">
-      <button class="pcard-close" id="pcard-close" onclick="closePlayerCard()">✕</button>
-      <div class="pcard-player" id="pc-name"></div>
-      <div class="pcard-stats" id="pc-stats"></div>
+<!-- PLAYER DETAIL MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal-sheet" id="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-head">
+      <button class="modal-close" onclick="closePlayerCard()">✕</button>
+      <div class="modal-player" id="pc-name"></div>
+      <div class="modal-stats" id="pc-stats"></div>
     </div>
-    <div class="pcard-section-head">
+    <div class="modal-cols">
       <span>大会</span><span>日付</span><span style="text-align:center">順位</span><span style="text-align:right">得点</span>
     </div>
-    <div class="pcard-body" id="pc-body"></div>
-    <div class="pcard-foot" id="pc-foot"></div>
+    <div class="modal-body" id="pc-body"></div>
+    <div class="modal-foot" id="pc-foot"></div>
   </div>
 </div>
 
@@ -452,7 +467,7 @@ const medals=['🥇','🥈','🥉'], gcls=['p1','p2','p3'];
 document.getElementById('podium').innerHTML = CUM.slice(0,3).map((p,i)=>`
   <div class="pcard ${gcls[i]}">
     <div class="pmed">${medals[i]}</div>
-    <div class="pnm" style="cursor:pointer" onclick="openModal('${p.name.replace(/'/g,"\\'")}',event)">${p.name}</div>
+    <div class="pnm" style="cursor:pointer" data-name="${p.name}" onclick="openModal(this.dataset.name)">${p.name}</div>
     <div class="psc">${fmt(p.total)}</div>
     <div class="pmt">${p.events}大会 · ${p.wins}優勝</div>
   </div>
@@ -463,7 +478,7 @@ document.getElementById('rbody').innerHTML = CUM.map(p=>`
   <tr>
     <td><span class="rn ${rc(p.rank)}">${p.rank}</span></td>
     <td>
-      <span class="pnm2" onclick="openModal('${p.name.replace(/'/g,"\\'")}',event)">${p.name}</span>
+      <span class="pnm2" data-name="${p.name}" onclick="openModal(this.dataset.name)">${p.name}</span>
       ${p.wins>0?`<span class="wn">👑 ${p.wins}</span>`:''}
     </td>
     <td class="r ec">${p.events}</td>
@@ -523,14 +538,12 @@ document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
   document.getElementById('p-'+t.dataset.tab).classList.add('on');
 }));
 
-// ── Player Card (tap-position aware)
-function openModal(name, event) { openPlayerCard(name, event); }
-
-function openPlayerCard(name, event) {
+// ── Player Detail Modal
+function openModal(name, event) {
   const cum = CUM.find(p=>p.name===name);
   if (!cum) return;
 
-  // ── コンテンツ生成
+  // コンテンツ生成
   document.getElementById('pc-name').textContent = name;
 
   const totalStr = fmt(cum.total);
@@ -569,78 +582,39 @@ function openPlayerCard(name, event) {
 
     const rankIcon = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'';
     rows.push(`
-      <div class="pcard-row${isWin?' win':''}">
-        <span class="pclbl">${lbl}</span>
-        <span class="pcdate">${dt}</span>
-        <span class="pcrank ${rc(rank)}">${rankIcon||rank}</span>
-        <span class="pcscore ${sc(score)}">${fmt(score)}</span>
+      <div class="modal-row${isWin?' win':''}">
+        <span class="mlbl">${lbl}</span>
+        <span class="mdate">${dt}</span>
+        <span class="mrank ${rc(rank)}">${rankIcon||rank}</span>
+        <span class="mscore ${sc(score)}">${fmt(score)}</span>
       </div>
     `);
   });
 
   document.getElementById('pc-body').innerHTML = rows.join('');
 
+  // ボディスクロールを先頭に戻す
+  document.getElementById('pc-body').scrollTop = 0;
+
   const footParts = [];
   if (best)  footParts.push(`ベスト ${best.lbl}：${fmt(best.score)}`);
   if (worst) footParts.push(`ワースト ${worst.lbl}：${fmt(worst.score)}`);
   document.getElementById('pc-foot').textContent = footParts.join('　　');
 
-  // ── 位置計算: タップ位置を基準に上下どちらに出すか決める
-  const card  = document.getElementById('player-card');
-  const inner = document.getElementById('pcard-inner');
-  card.style.display = 'block';
+  // モーダル表示
+  const overlay = document.getElementById('modal-overlay');
+  overlay.classList.add('show');
+  // bodyのスクロールは止めない（Wix iframeでは逆効果）
+}
 
-  // タップ座標（touchイベントまたはmouseイベント）
-  let tapY = 0;
-  if (event) {
-    const t = event.changedTouches ? event.changedTouches[0] : event;
-    tapY = t.clientY ?? (event.clientY || 0);
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('modal-overlay')) {
+    closePlayerCard();
   }
-
-  const vh = window.innerHeight;
-  const cardH = Math.min(vh * 0.72, 520); // max-heightの概算
-  const margin = 12;
-  const tabH   = 44; // タブバー高さ概算
-
-  // カードをタップ位置の少し上に出す（タップ箇所が見えるよう）
-  // 上に出しきれない場合は下に出す
-  let topPx;
-  const spaceAbove = tapY - tabH - margin;
-  const spaceBelow = vh - tapY - margin;
-
-  if (spaceAbove >= cardH) {
-    // タップ位置の上に収まる → タップ直上
-    topPx = tapY - cardH - margin;
-  } else if (spaceBelow >= cardH) {
-    // タップ位置の下に収まる
-    topPx = tapY + margin;
-  } else {
-    // どちらも収まらない → 画面中央寄せ
-    topPx = Math.max(tabH + margin, (vh - cardH) / 2);
-  }
-
-  // 画面上下からはみ出さないよう制限
-  topPx = Math.max(tabH + margin, Math.min(topPx, vh - cardH - margin));
-  card.style.top = topPx + 'px';
-
-  // 背景タップで閉じるオーバーレイ
-  let overlay = document.getElementById('pcard-overlay');
-  if (!overlay) {
-    overlay = document.createElement('div');
-    overlay.id = 'pcard-overlay';
-    overlay.className = 'pcard-overlay';
-    overlay.addEventListener('click', closePlayerCard);
-    document.body.appendChild(overlay);
-  }
-  overlay.style.display = 'block';
-  document.body.style.overflow = 'hidden';
 }
 
 function closePlayerCard() {
-  document.getElementById('player-card').style.display = 'none';
-  const overlay = document.getElementById('pcard-overlay');
-  if (overlay) overlay.style.display = 'none';
-  document.body.style.overflow = '';
+  document.getElementById('modal-overlay').classList.remove('show');
 }
 
 function closeModal(e) { closePlayerCard(); }
